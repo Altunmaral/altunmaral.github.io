@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP Conceptual Design — Project Nexus | One</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   NEXUS DESIGN TOKENS — from Figma MCP
+   ========================================================================== */
+:root {
+  --colour-button-primary-active: #0c41c9;
+  --colour-button-primary-hover: #19316f;
+  --colour-button-secondary-active: #d8e3ff;
+  --colour-button-secondary-hover: #0c41c9;
+  --colour-button-inactive: #dcdfe4;
+  --colour-global-primary: #0c41c9;
+  --colour-global-white: #ffffff;
+  --colour-global-black: #0c192f;
+  --colour-global-eq-red: #de0a14;
+  --colour-text-primary: #0c41c9;
+  --colour-text-white: #ffffff;
+  --colour-text-body: #0c192f;
+  --colour-text-button-inactive: #3b485d;
+  --colour-text-body-disabled: #616c82;
+  --colour-text-error: #860003;
+  --colour-text-gain: #006644;
+  --colour-text-success: #005237;
+  --colour-text-information: #1c1f4c;
+  --colour-text-warning: #751c00;
+  --colour-icons-default: #0c192f;
+  --colour-icons-inactive: #a1a8b4;
+  --colour-icons-success: #00875a;
+  --colour-icons-gain: #006644;
+  --colour-icons-error: #ad0e11;
+  --colour-icons-warning: #f19035;
+  --colour-stroke-default: #dcdfe4;
+  --colour-stroke-input-active: #536077;
+  --colour-stroke-error: #ad0e11;
+  --colour-stroke-success: #00875a;
+  --colour-stroke-information: #0c41c9;
+  --colour-stroke-warning: #f19035;
+  --colour-alert-red: #e53935;
+  --colour-eq-red: #de0a14;
+  --colour-success: #16a34a;
+  --colour-alerts-error: #ffeff1;
+  --colour-alerts-success: #e8fbf0;
+  --colour-alerts-info: #d8e3ff;
+  --colour-alerts-warning: #fefae8;
+  --colour-warning-bg: #fefae8;
+  --colour-panels-default: #f9f9fb;
+  --colour-panels-light: #f3f4f6;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --typescale-body-regular: 18px;
+  --typescale-body-small: 16px;
+  --typescale-small-label: 12px;
+  --typescale-body-large: 20px;
+  --typescale-heading-h2: 31px;
+  --typescale-heading-h5: 22px;
+  --typescale-heading-xxl: 25px;
+  --typescale-heading-xxl2: 28px;
+  --typescale-heading-xxl3: 31px;
+  --typescale-heading-xxl4: 35px;
+  --radius-button: 4px;
+  --radius-pill: 999px;
+  --corners-sm: 4px;
+  --corners-md: 8px;
+  --corners-lg: 16px;
+  --corners-full: 160px;
+  --padding-small: 8px;
+  --padding-medium: 16px;
+  --padding-large: 24px;
+  --padding-x-large: 40px;
+  --elevation-1: 0 1px 3px rgba(12,25,47,0.08);
+  --elevation-2: 0 4px 8px rgba(12,25,47,0.12);
+  --elevation-3: 0 8px 24px rgba(12,25,47,0.16);
+  --elevation-focus: 0 0 0 3px rgba(12,65,201,0.25);
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+}
+
+/* ==========================================================================
+   RESET & BASE
+   ========================================================================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-family);color:var(--colour-text-body);background:#f5f6f8;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--colour-text-primary);text-decoration:none}
+
+/* ==========================================================================
+   PAGE LAYOUT
+   ========================================================================== */
+.page-header{
+  background:var(--colour-global-black);color:white;padding:48px 80px;
+}
+.page-header h1{font-size:var(--typescale-heading-xxl4);font-weight:700;margin-bottom:8px}
+.page-header p{font-size:var(--typescale-body-regular);opacity:0.8;max-width:700px;line-height:1.6}
+.page-header .tag{display:inline-block;background:var(--colour-global-primary);color:white;font-size:var(--typescale-small-label);font-weight:700;padding:4px 12px;border-radius:var(--corners-sm);margin-bottom:16px}
+
+/* Screen nav */
+.screen-nav{
+  position:sticky;top:0;z-index:30;background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--colour-stroke-default);
+  padding:0 80px;display:flex;align-items:center;gap:0;overflow-x:auto;
+}
+.screen-nav a{
+  display:flex;align-items:center;height:56px;padding:0 20px;
+  font-size:var(--typescale-body-small);font-weight:500;color:var(--colour-text-body);
+  border-bottom:2px solid transparent;white-space:nowrap;transition:all var(--transition-fast);
+}
+.screen-nav a:hover{color:var(--colour-text-primary)}
+.screen-nav a.active{color:var(--colour-text-primary);border-bottom-color:var(--colour-global-primary);font-weight:600}
+
+/* Screen sections */
+.screen-section{padding:64px 80px;border-bottom:1px solid #e2e5ea}
+.screen-section:last-child{border-bottom:none}
+.screen-label{font-size:var(--typescale-small-label);font-weight:700;color:var(--colour-global-primary);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.screen-title{font-size:var(--typescale-heading-xxl);font-weight:700;color:var(--colour-text-body);margin-bottom:4px}
+.screen-desc{font-size:var(--typescale-body-small);color:var(--colour-text-body-disabled);margin-bottom:32px;max-width:640px}
+
+/* ==========================================================================
+   SCREEN MOCKUP FRAME
+   ========================================================================== */
+.mockup-frame{
+  background:white;border:1px solid #e2e5ea;border-radius:var(--corners-lg);
+  overflow:hidden;position:relative;box-shadow:var(--elevation-2);
+}
+.mockup-browser-bar{
+  display:flex;align-items:center;gap:8px;padding:10px 16px;
+  background:#f5f6f8;border-bottom:1px solid #e2e5ea;
+}
+.mockup-dot{width:10px;height:10px;border-radius:50%;background:#dcdfe4}
+.mockup-url{flex:1;background:white;border:1px solid #e2e5ea;border-radius:var(--corners-sm);padding:4px 12px;font-size:12px;color:var(--colour-text-body-disabled)}
+.mockup-body{position:relative;padding:0}
+
+/* ==========================================================================
+   NEXUS UI COMPONENTS (inside mockups)
+   ========================================================================== */
+.nx-topbar{
+  display:flex;align-items:center;height:56px;padding:0 32px;
+  background:rgba(255,255,255,0.95);border-bottom:1px solid var(--colour-stroke-default);
+}
+.nx-topbar-logo{font-size:18px;font-weight:700;color:var(--colour-global-primary);margin-right:32px}
+.nx-topbar-tabs{display:flex;gap:0;height:56px}
+.nx-topbar-tab{
+  display:flex;align-items:center;height:56px;padding:0 16px;font-size:14px;
+  color:var(--colour-text-body);border-bottom:2px solid transparent;cursor:default;
+}
+.nx-topbar-tab.active{color:var(--colour-text-primary);border-bottom-color:var(--colour-global-primary);font-weight:600}
+.nx-topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.nx-topbar-avatar{width:28px;height:28px;border-radius:50%;background:var(--colour-button-secondary-active);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--colour-global-primary)}
+
+.nx-page-content{padding:32px}
+
+/* Value display */
+.nx-val-big{font-size:var(--typescale-heading-xxl3);font-weight:700;color:var(--colour-text-body)}
+.nx-val-label{font-size:var(--typescale-body-small);color:var(--colour-text-body-disabled)}
+.nx-val-delta{font-size:14px;font-weight:600}
+.nx-val-delta.gain{color:var(--colour-text-gain)}
+.nx-val-delta.loss{color:var(--colour-eq-red)}
+
+/* Card */
+.nx-card{background:white;border:1px solid var(--colour-stroke-default);border-radius:var(--corners-lg);padding:var(--padding-large)}
+.nx-card-header{font-size:var(--typescale-heading-h5);font-weight:700;margin-bottom:16px}
+
+/* Status pills in mockup */
+.nx-status-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 12px;
+  border-radius:var(--radius-pill);font-size:var(--typescale-small-label);font-weight:600;
+}
+.nx-status-pill.available{background:var(--colour-alerts-success);color:var(--colour-text-success)}
+.nx-status-pill.conditional{background:var(--colour-alerts-warning);color:var(--colour-text-warning)}
+.nx-status-pill.locked{background:var(--colour-alerts-error);color:var(--colour-text-error)}
+
+/* Buttons in mockup */
+.nx-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--font-family);font-weight:400;font-size:var(--typescale-body-small);
+  border:none;cursor:default;min-height:40px;padding:8px 16px;
+  border-radius:var(--radius-button);transition:all var(--transition-base);
+}
+.nx-btn--primary{background:var(--colour-button-primary-active);color:white}
+.nx-btn--secondary{background:var(--colour-button-secondary-active);color:var(--colour-text-primary)}
+.nx-btn--outline{background:white;color:var(--colour-text-body);border:1px solid var(--colour-icons-default)}
+.nx-btn--sm{min-height:34px;padding:6px 12px;font-size:var(--typescale-small-label)}
+
+/* Data table in mockup */
+.nx-table{width:100%;border-collapse:collapse;font-size:14px}
+.nx-table th{text-align:left;padding:10px 12px;font-weight:700;font-size:13px;color:var(--colour-text-body);border-bottom:2px solid var(--colour-global-primary)}
+.nx-table td{padding:10px 12px;border-bottom:1px solid var(--colour-stroke-default);vertical-align:middle}
+
+/* Alert banner */
+.nx-alert-mock{display:flex;border-radius:var(--radius-button);overflow:hidden}
+.nx-alert-mock .bar{width:4px;flex-shrink:0}
+.nx-alert-mock .content{padding:12px 16px;flex:1;font-size:13px;line-height:1.5}
+.nx-alert-mock.warning .bar{background:var(--colour-stroke-warning)}
+.nx-alert-mock.warning .content{background:var(--colour-alerts-warning);color:var(--colour-text-warning)}
+.nx-alert-mock.info .bar{background:var(--colour-stroke-information)}
+.nx-alert-mock.info .content{background:var(--colour-alerts-info);color:var(--colour-text-information)}
+.nx-alert-mock.success .bar{background:var(--colour-stroke-success)}
+.nx-alert-mock.success .content{background:var(--colour-alerts-success);color:var(--colour-text-success)}
+.nx-alert-mock.error .bar{background:var(--colour-stroke-error)}
+.nx-alert-mock.error .content{background:var(--colour-alerts-error);color:var(--colour-text-error)}
+
+/* Stepper */
+.nx-stepper-mock{display:flex;align-items:center;gap:0}
+.nx-step{display:flex;align-items:center;gap:8px}
+.nx-step-circle{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white}
+.nx-step-circle.active{background:var(--colour-global-primary)}
+.nx-step-circle.done{background:var(--colour-icons-success)}
+.nx-step-circle.pending{background:var(--colour-button-inactive);color:var(--colour-text-body-disabled)}
+.nx-step-label{font-size:13px;color:var(--colour-text-body)}
+.nx-step-line{width:40px;height:2px;background:var(--colour-stroke-default);margin:0 4px}
+.nx-step-line.done{background:var(--colour-global-primary)}
+
+/* Tab row in mockup */
+.nx-tab-row{display:flex;gap:0;border-bottom:2px solid var(--colour-stroke-default)}
+.nx-tab-item{padding:10px 20px;font-size:14px;font-weight:500;color:var(--colour-text-body-disabled);border-bottom:2px solid transparent;margin-bottom:-2px}
+.nx-tab-item.active{color:var(--colour-text-primary);border-bottom-color:var(--colour-global-primary);font-weight:600}
+
+/* Input in mockup */
+.nx-input-mock{display:flex;align-items:center;height:40px;padding:8px 12px;background:white;border:1px solid var(--colour-stroke-default);border-radius:var(--corners-sm);font-size:16px;color:var(--colour-text-body-disabled);gap:8px}
+.nx-input-mock.populated{color:var(--colour-text-body);border-color:var(--colour-stroke-input-active)}
+
+/* Grid helpers */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.flex-col{display:flex;flex-direction:column}
+.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}.gap-24{gap:24px}
+.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}
+
+/* ==========================================================================
+   ANNOTATION SYSTEM — Clickable Toggle
+   ========================================================================== */
+.anno-marker{
+  position:absolute;width:28px;height:28px;border-radius:50%;
+  background:var(--colour-alert-red);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;cursor:pointer;z-index:10;
+  box-shadow:0 2px 8px rgba(229,57,53,0.4);
+  transition:transform var(--transition-fast),box-shadow var(--transition-fast);
+  user-select:none;
+}
+.anno-marker:hover{transform:scale(1.15);box-shadow:0 4px 16px rgba(229,57,53,0.5)}
+.anno-marker.open{transform:scale(1.15);box-shadow:0 0 0 4px rgba(229,57,53,0.25)}
+
+/* Annotation popup card */
+.anno-card{
+  position:absolute;z-index:20;width:380px;
+  background:white;border-radius:var(--corners-lg);
+  box-shadow:var(--elevation-3);border:1px solid var(--colour-stroke-default);
+  opacity:0;visibility:hidden;transform:translateY(8px);
+  transition:all 0.25s ease;pointer-events:none;
+}
+.anno-card.open{
+  opacity:1;visibility:visible;transform:translateY(0);pointer-events:all;
+}
+.anno-card-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:20px 20px 12px;border-bottom:1px solid #f0f2f5;
+}
+.anno-card-num{
+  width:24px;height:24px;border-radius:50%;background:var(--colour-alert-red);
+  color:white;font-size:11px;font-weight:700;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;margin-right:10px;margin-top:2px;
+}
+.anno-card-title{font-size:16px;font-weight:700;color:var(--colour-text-body);flex:1}
+.anno-card-close{
+  width:24px;height:24px;cursor:pointer;color:var(--colour-icons-inactive);
+  background:none;border:none;font-size:18px;line-height:1;flex-shrink:0;
+}
+.anno-card-close:hover{color:var(--colour-text-body)}
+.anno-card-body{padding:16px 20px 20px}
+.anno-card-rationale{font-size:14px;color:var(--colour-text-body);line-height:1.6;margin-bottom:16px}
+
+/* Session pills */
+.anno-sessions{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.session-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:var(--radius-pill);
+  font-size:11px;font-weight:600;
+}
+.session-pill.employee{background:var(--colour-alerts-success);color:var(--colour-text-success)}
+.session-pill.admin-jan21{background:var(--colour-alerts-info);color:var(--colour-text-information)}
+.session-pill.admin-jan29{background:#eef1fd;color:var(--colour-text-information)}
+.session-pill.admin-feb16{background:#e8eafd;color:#19316f}
+.session-pill.bt-interview{background:var(--colour-alerts-warning);color:var(--colour-text-warning)}
+.session-pill.sip-workshop{background:var(--colour-panels-light);color:var(--colour-text-body)}
+
+.anno-mention-count{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:700;color:var(--colour-global-primary);
+  margin-bottom:12px;
+}
+.anno-mention-count .dot{width:6px;height:6px;border-radius:50%;background:var(--colour-global-primary)}
+
+/* Quote block */
+.anno-quote{
+  border-left:3px solid var(--colour-global-primary);padding:8px 12px;
+  background:#f8f9fc;border-radius:0 var(--corners-sm) var(--corners-sm) 0;
+  margin-bottom:8px;
+}
+.anno-quote p{font-size:13px;font-style:italic;color:var(--colour-text-body);line-height:1.5}
+.anno-quote cite{font-size:11px;color:var(--colour-text-body-disabled);font-style:normal;display:block;margin-top:4px}
+
+/* Overlay backdrop for annotations */
+.anno-backdrop{
+  display:none;position:fixed;inset:0;z-index:15;
+}
+.anno-backdrop.open{display:block}
+
+/* ==========================================================================
+   LEGEND
+   ========================================================================== */
+.legend-bar{
+  display:flex;flex-wrap:wrap;gap:16px;padding:16px 80px;
+  background:white;border-bottom:1px solid var(--colour-stroke-default);
+  font-size:12px;align-items:center;
+}
+.legend-bar .label{font-weight:700;color:var(--colour-text-body-disabled);text-transform:uppercase;letter-spacing:0.08em;margin-right:8px}
+
+/* Progress bar in mockup */
+.progress-track{height:6px;background:#eef0f4;border-radius:3px;width:100%}
+.progress-fill{height:100%;border-radius:3px;background:var(--colour-global-primary)}
+
+/* Placeholder chart */
+.chart-placeholder{
+  height:140px;background:linear-gradient(180deg,rgba(12,65,201,0.05) 0%,rgba(12,65,201,0.15) 100%);
+  border-radius:var(--corners-md);display:flex;align-items:flex-end;padding:0 8px;gap:4px;
+}
+.chart-bar{background:var(--colour-global-primary);border-radius:2px 2px 0 0;flex:1;opacity:0.6}
+
+@media(max-width:900px){
+  .page-header,.screen-section{padding-left:24px;padding-right:24px}
+  .screen-nav,.legend-bar{padding-left:24px;padding-right:24px}
+  .anno-card{width:320px}
+}
+</style>
+</head>
+<body>
+
+<!-- Backdrop for closing annotations -->
+<div class="anno-backdrop" id="annoBackdrop" onclick="closeAllAnnotations()"></div>
+
+<!-- ============================================================
+     PAGE HEADER
+     ============================================================ -->
+<header class="page-header">
+  <div class="tag">SIP</div>
+  <h1>SIP Conceptual Design — Project Nexus</h1>
+  <p>Employee-facing Share Incentive Plan portal concepts for One's unified global platform. Each screen includes clickable research-backed annotations showing which sessions informed the design decisions.</p>
+</header>
+
+<!-- Session Legend -->
+<div class="legend-bar">
+  <span class="label">Sessions:</span>
+  <span class="session-pill employee">Employee FG Dec '25</span>
+  <span class="session-pill admin-jan21">Admin FG 21 Jan</span>
+  <span class="session-pill admin-jan29">Admin FG 29 Jan</span>
+  <span class="session-pill admin-feb16">Admin FG 16 Feb</span>
+  <span class="session-pill bt-interview">BT Interview</span>
+  <span class="session-pill sip-workshop">SIP Workshop Feb '26</span>
+  <span style="margin-left:auto;font-size:12px;color:var(--colour-text-body-disabled)">Click <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--colour-alert-red);color:white;font-size:10px;font-weight:700">1</span> markers to view research insights</span>
+</div>
+
+<!-- Screen Navigation -->
+<nav class="screen-nav" id="screenNav">
+  <a href="#screen-1" class="active" onclick="setActiveNav(this)">1. Portfolio Overview</a>
+  <a href="#screen-2" onclick="setActiveNav(this)">2. Financial Modeller</a>
+  <a href="#screen-3" onclick="setActiveNav(this)">3. Holdings Detail</a>
+  <a href="#screen-4" onclick="setActiveNav(this)">4. Sell Flow</a>
+  <a href="#screen-5" onclick="setActiveNav(this)">5. Dividend History</a>
+  <a href="#screen-6" onclick="setActiveNav(this)">6. Transaction Tracker</a>
+  <a href="#screen-7" onclick="setActiveNav(this)">7. Contributions</a>
+</nav>
+
+<!-- ============================================================
+     SCREEN 1: PORTFOLIO OVERVIEW
+     ============================================================ -->
+<section class="screen-section" id="screen-1">
+  <div class="screen-label">Screen 1 of 7</div>
+  <div class="screen-title">Portfolio Overview</div>
+  <div class="screen-desc">The unified SIP dashboard. Employees see their total holdings, share status breakdown, quick actions, and educational content in one place.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar">
+      <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+      <div class="mockup-url">https://portal.one.group/sip/overview</div>
+    </div>
+    <div class="mockup-body">
+      <!-- Top Nav -->
+      <div class="nx-topbar">
+        <span class="nx-topbar-logo">One</span>
+        <div class="nx-topbar-tabs">
+          <div class="nx-topbar-tab active">My SIP</div>
+          <div class="nx-topbar-tab">SAYE</div>
+          <div class="nx-topbar-tab">Share Awards</div>
+          <div class="nx-topbar-tab">Documents</div>
+        </div>
+        <div class="nx-topbar-right">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div class="nx-topbar-avatar">IP</div>
+        </div>
+      </div>
+
+      <div class="nx-page-content">
+        <!-- Breadcrumb -->
+        <div style="font-size:12px;color:var(--colour-text-body-disabled);margin-bottom:16px">
+          <span style="color:var(--colour-text-primary)">Home</span> <span style="margin:0 6px">›</span> <span style="font-weight:700;color:var(--colour-text-body)">My SIP Portfolio</span>
+        </div>
+
+        <!-- Value Hero -->
+        <div class="flex-between mb-24" style="position:relative">
+          <div>
+            <div class="nx-val-label">Total SIP Value</div>
+            <div class="nx-val-big">£12,847.60</div>
+            <div class="nx-val-delta gain">↑ £847.60 (+7.06%) all time</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="nx-btn nx-btn--primary">Sell Shares</div>
+            <div class="nx-btn nx-btn--outline">Manage Contributions</div>
+          </div>
+
+          <!-- Annotation markers -->
+          <div class="anno-marker" style="top:-4px;left:120px" onclick="toggleAnno('a1')" id="marker-a1">1</div>
+          <div class="anno-marker" style="top:8px;right:160px" onclick="toggleAnno('a3')" id="marker-a3">3</div>
+        </div>
+
+        <!-- Status Cards -->
+        <div class="grid-3 mb-24" style="position:relative">
+          <div class="nx-card flex-col gap-8">
+            <div class="flex-between"><span class="nx-val-label">Available Shares</span><span class="nx-status-pill available">● Tax-free</span></div>
+            <div style="font-size:24px;font-weight:700">342 shares</div>
+            <div style="font-size:14px;color:var(--colour-text-body-disabled)">Held 5+ years — £4,218.66</div>
+          </div>
+          <div class="nx-card flex-col gap-8">
+            <div class="flex-between"><span class="nx-val-label">Conditional Shares</span><span class="nx-status-pill conditional">● 3-5 years</span></div>
+            <div style="font-size:24px;font-weight:700">519 shares</div>
+            <div style="font-size:14px;color:var(--colour-text-body-disabled)">Tax payable on early sale — £6,399.27</div>
+          </div>
+          <div class="nx-card flex-col gap-8">
+            <div class="flex-between"><span class="nx-val-label">Locked-in Shares</span><span class="nx-status-pill locked">● &lt;3 years</span></div>
+            <div style="font-size:24px;font-weight:700">181 shares</div>
+            <div style="font-size:14px;color:var(--colour-text-body-disabled)">Cannot sell yet — £2,229.67</div>
+          </div>
+          <div class="anno-marker" style="top:10px;right:-14px" onclick="toggleAnno('a2')" id="marker-a2">2</div>
+        </div>
+
+        <!-- Contributions + Education row -->
+        <div class="grid-2 mb-16" style="position:relative">
+          <div class="nx-card flex-col gap-12">
+            <div class="nx-card-header" style="font-size:16px;margin-bottom:0">My Contributions</div>
+            <div class="flex-between">
+              <span style="font-size:14px">Monthly contribution</span>
+              <span style="font-size:18px;font-weight:700">£200</span>
+            </div>
+            <div class="flex-between">
+              <span style="font-size:14px">Employer match (2:1)</span>
+              <span style="font-size:18px;font-weight:700">£100</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:53%"></div></div>
+            <div style="font-size:12px;color:var(--colour-text-body-disabled)">53% of max annual allowance (£1,800/yr)</div>
+          </div>
+          <div class="nx-card flex-col gap-12">
+            <div class="nx-card-header" style="font-size:16px;margin-bottom:0">Learn About Your SIP</div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;background:var(--colour-panels-light);border-radius:var(--corners-md);padding:12px;font-size:13px">
+                <div style="font-weight:700;margin-bottom:4px">📺 What is SIP?</div>
+                <div style="color:var(--colour-text-body-disabled)">2 min video</div>
+              </div>
+              <div style="flex:1;background:var(--colour-panels-light);border-radius:var(--corners-md);padding:12px;font-size:13px">
+                <div style="font-weight:700;margin-bottom:4px">📊 Tax Benefits</div>
+                <div style="color:var(--colour-text-body-disabled)">Interactive guide</div>
+              </div>
+            </div>
+            <div class="nx-btn nx-btn--secondary nx-btn--sm" style="align-self:flex-start">View all resources →</div>
+          </div>
+          <div class="anno-marker" style="top:10px;left:-14px" onclick="toggleAnno('a5')" id="marker-a5">5</div>
+          <div class="anno-marker" style="top:10px;right:calc(50% - 14px)" onclick="toggleAnno('a4')" id="marker-a4">4</div>
+        </div>
+
+        <!-- Tax warning -->
+        <div style="position:relative">
+          <div class="nx-alert-mock warning">
+            <div class="bar"></div>
+            <div class="content"><strong>Tax reminder:</strong> CGT allowance is now £3,000/year. If you sell conditional shares, you may owe Capital Gains Tax. Use the Financial Modeller to check your position.</div>
+          </div>
+          <div class="anno-marker" style="top:-10px;right:20px" onclick="toggleAnno('a6')" id="marker-a6">6</div>
+        </div>
+      </div>
+
+      <!-- ===== ANNOTATION CARDS for Screen 1 ===== -->
+      <div class="anno-card" id="anno-a1" style="top:80px;left:180px">
+        <div class="anno-card-head">
+          <div class="anno-card-num">1</div>
+          <div class="anno-card-title">Share Value Clarity</div>
+          <button class="anno-card-close" onclick="closeAnno('a1')">&times;</button>
+        </div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">The total portfolio value is front-and-centre with a clear gain/loss delta. Research showed employees couldn't easily understand what their shares were worth or how they'd grown.</div>
+          <div class="anno-sessions">
+            <span class="session-pill employee">Employee FG</span>
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 5 of 6 sessions (~69 references)</div>
+          <div class="anno-quote">
+            <p>"Some people are sitting on balances of 30,000+ shares with absolutely no idea that they own them."</p>
+            <cite>— Anna, BT Share Plans Administrator</cite>
+          </div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-a2" style="top:200px;right:20px">
+        <div class="anno-card-head">
+          <div class="anno-card-num">2</div>
+          <div class="anno-card-title">Share Status Clarity</div>
+          <button class="anno-card-close" onclick="closeAnno('a2')">&times;</button>
+        </div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Three clear status categories with colour-coded pills replace confusing terminology. Each card shows what the employee can do with those shares and the tax implications.</div>
+          <div class="anno-sessions">
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-jan29">Admin 29 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 4 sessions (~35 references)</div>
+          <div class="anno-quote">
+            <p>"The discretionary portal needs to show: accurate current values (net of tax), clear vesting schedules with holding periods."</p>
+            <cite>— Admin Focus Group, 16 Feb 2026</cite>
+          </div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-a3" style="top:60px;right:40px">
+        <div class="anno-card-head">
+          <div class="anno-card-num">3</div>
+          <div class="anno-card-title">"Sell Shares" as Primary CTA</div>
+          <button class="anno-card-close" onclick="closeAnno('a3')">&times;</button>
+        </div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Selling is the #1 reason employees visit the portal. The primary action button is immediately visible without scrolling, reducing time-to-task from the current multi-click journey.</div>
+          <div class="anno-sessions">
+            <span class="session-pill employee">Employee FG</span>
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> 90% of portal visits are to sell (SIP Workshop)</div>
+          <div class="anno-quote">
+            <p>"We're just normal workers, we're not share dealers. We just wanna earn an extra pound."</p>
+            <cite>— Gareth, GSK (Employee FG Dec '25)</cite>
+          </div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-a4" style="bottom:120px;right:60px">
+        <div class="anno-card-head">
+          <div class="anno-card-num">4</div>
+          <div class="anno-card-title">Embedded Education Hub</div>
+          <button class="anno-card-close" onclick="closeAnno('a4')">&times;</button>
+        </div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Short videos and interactive guides replace long PDFs. Microsites were called a "game changer" by both admins and employees. Content is contextual and bite-sized.</div>
+          <div class="anno-sessions">
+            <span class="session-pill employee">Employee FG</span>
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-jan29">Admin 29 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in ALL 6 sessions (~110 references) — Most consistent theme</div>
+          <div class="anno-quote">
+            <p>"Nobody wants to sit and necessarily just plow their way through a PowerPoint. They'd much rather watch a 2-minute video."</p>
+            <cite>— Anna, BT Administrator</cite>
+          </div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-a5" style="bottom:140px;left:40px">
+        <div class="anno-card-head">
+          <div class="anno-card-num">5</div>
+          <div class="anno-card-title">Contribution Info on Front Page</div>
+          <button class="anno-card-close" onclick="closeAnno('a5')">&times;</button>
+        </div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Monthly contributions, employer match, and progress toward the annual allowance are visible on the overview — not buried in a sub-page. Includes a visual progress bar.</div>
+          <div class="anno-sessions">
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 3 sessions (~48 references)</div>
+          <div class="anno-quote">
+            <p>"When employees change SIP contribution amounts close to a cutoff date, the change doesn't take effect until the following month."</p>
+            <cite>— Anna, BT Administrator</cite>
+          </div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-a6" style="bottom:40px;right:60px">
+        <div class="anno-card-head">
+          <div class="anno-card-num">6</div>
+          <div class="anno-card-title">Proactive Tax Warning</div>
+          <button class="anno-card-close" onclick="closeAnno('a6')">&times;</button>
+        </div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">A persistent contextual alert warns about CGT implications. The CGT allowance dropping from £12,000 to £3,000 was the #1 research theme. Employees make uninformed sell decisions without this.</div>
+          <div class="anno-sessions">
+            <span class="session-pill employee">Employee FG</span>
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-jan29">Admin 29 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in ALL 6 sessions (~118 references) — CRITICAL priority</div>
+          <div class="anno-quote">
+            <p>"Tax, pensions, and shares are the three areas where people glaze over the minute you start to talk to them."</p>
+            <cite>— Anna, BT Administrator</cite>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 2: FINANCIAL MODELLER
+     ============================================================ -->
+<section class="screen-section" id="screen-2">
+  <div class="screen-label">Screen 2 of 7</div>
+  <div class="screen-title">Financial Modeller</div>
+  <div class="screen-desc">An interactive tax-impact calculator. Employees model "sell now vs wait" scenarios and see the real financial difference of holding shares to the 5-year tax-free point.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar">
+      <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+      <div class="mockup-url">https://portal.one.group/sip/financial-modeller</div>
+    </div>
+    <div class="mockup-body">
+      <div class="nx-topbar">
+        <span class="nx-topbar-logo">One</span>
+        <div class="nx-topbar-tabs">
+          <div class="nx-topbar-tab">My SIP</div>
+          <div class="nx-topbar-tab active">Tools</div>
+          <div class="nx-topbar-tab">Documents</div>
+        </div>
+        <div class="nx-topbar-right"><div class="nx-topbar-avatar">IP</div></div>
+      </div>
+      <div class="nx-page-content">
+        <div style="font-size:12px;color:var(--colour-text-body-disabled);margin-bottom:16px">
+          <span style="color:var(--colour-text-primary)">Home</span> › <span style="color:var(--colour-text-primary)">Tools</span> › <span style="font-weight:700">Financial Modeller</span>
+        </div>
+        <div style="font-size:22px;font-weight:700;margin-bottom:24px">Financial Modeller</div>
+
+        <!-- Input section -->
+        <div class="grid-2 mb-24" style="position:relative">
+          <div class="nx-card flex-col gap-16">
+            <div style="font-size:16px;font-weight:700">How much do you need?</div>
+            <div class="nx-input-mock populated" style="font-size:18px;font-weight:700;color:var(--colour-text-body)">£ 3,000</div>
+            <div style="font-size:13px;color:var(--colour-text-body-disabled)">We'll calculate how many shares to sell and the tax impact.</div>
+            <div class="nx-btn nx-btn--primary" style="align-self:flex-start">Calculate →</div>
+          </div>
+          <div class="nx-card flex-col gap-8">
+            <div style="font-size:16px;font-weight:700">Your Current Position</div>
+            <div class="flex-between"><span style="font-size:14px">Total SIP shares</span><span style="font-weight:700">1,042</span></div>
+            <div class="flex-between"><span style="font-size:14px">Current share price</span><span style="font-weight:700">£12.33</span></div>
+            <div class="flex-between"><span style="font-size:14px">Available (tax-free)</span><span style="font-weight:700;color:var(--colour-icons-success)">342 shares</span></div>
+            <div class="flex-between"><span style="font-size:14px">Conditional (taxable)</span><span style="font-weight:700;color:var(--colour-icons-warning)">519 shares</span></div>
+          </div>
+          <div class="anno-marker" style="top:30px;left:-14px" onclick="toggleAnno('b1')" id="marker-b1">1</div>
+        </div>
+
+        <!-- Results comparison -->
+        <div class="nx-card mb-24" style="position:relative">
+          <div style="font-size:16px;font-weight:700;margin-bottom:20px">Tax Impact Comparison</div>
+          <div class="grid-2 gap-24">
+            <div style="background:var(--colour-alerts-warning);border-radius:var(--corners-md);padding:20px">
+              <div style="font-size:14px;font-weight:700;color:var(--colour-text-warning);margin-bottom:12px">⚠ If you sell NOW (conditional shares)</div>
+              <div class="flex-between mb-8"><span style="font-size:14px">Shares to sell</span><span style="font-weight:700">244 shares</span></div>
+              <div class="flex-between mb-8"><span style="font-size:14px">Gross proceeds</span><span style="font-weight:700">£3,008.52</span></div>
+              <div class="flex-between mb-8"><span style="font-size:14px">Income tax + NI</span><span style="font-weight:700;color:var(--colour-icons-error)">−£903.00</span></div>
+              <div style="border-top:1px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:8px" class="flex-between"><span style="font-size:16px;font-weight:700">You receive</span><span style="font-size:20px;font-weight:700;color:var(--colour-text-warning)">£2,105.52</span></div>
+            </div>
+            <div style="background:var(--colour-alerts-success);border-radius:var(--corners-md);padding:20px">
+              <div style="font-size:14px;font-weight:700;color:var(--colour-text-success);margin-bottom:12px">✓ If you WAIT until tax-free</div>
+              <div class="flex-between mb-8"><span style="font-size:14px">Shares to sell</span><span style="font-weight:700">244 shares</span></div>
+              <div class="flex-between mb-8"><span style="font-size:14px">Gross proceeds</span><span style="font-weight:700">£3,008.52</span></div>
+              <div class="flex-between mb-8"><span style="font-size:14px">Tax payable</span><span style="font-weight:700;color:var(--colour-icons-success)">£0.00</span></div>
+              <div style="border-top:1px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:8px" class="flex-between"><span style="font-size:16px;font-weight:700">You receive</span><span style="font-size:20px;font-weight:700;color:var(--colour-text-success)">£3,008.52</span></div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:16px;font-size:14px;font-weight:700;color:var(--colour-global-primary)">You save £903.00 by waiting — that's 30% more in your pocket</div>
+          <div class="anno-marker" style="top:10px;right:-14px" onclick="toggleAnno('b2')" id="marker-b2">2</div>
+        </div>
+
+        <div style="position:relative">
+          <div class="nx-alert-mock info">
+            <div class="bar"></div>
+            <div class="content"><strong>Your available (tax-free) shares</strong> can cover £4,218 without any tax. Consider selling those first.</div>
+          </div>
+          <div class="anno-marker" style="top:-10px;right:80px" onclick="toggleAnno('b3')" id="marker-b3">3</div>
+        </div>
+      </div>
+
+      <!-- Annotation cards -->
+      <div class="anno-card" id="anno-b1" style="top:120px;left:40px">
+        <div class="anno-card-head"><div class="anno-card-num">1</div><div class="anno-card-title">"How Much Do I Need?" Calculator</div><button class="anno-card-close" onclick="closeAnno('b1')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Employees think in terms of money needed, not shares to sell. This reverses the mental model: enter a target amount and the system calculates which shares to sell optimally.</div>
+          <div class="anno-sessions">
+            <span class="session-pill employee">Employee FG</span>
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 5 sessions (~39 references)</div>
+          <div class="anno-quote"><p>"Calculator tools: I need £3,000 for a holiday — how many shares should I sell?"</p><cite>— Employee request, Admin FG 21 Jan</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-b2" style="top:220px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">2</div><div class="anno-card-title">Side-by-Side Tax Comparison</div><button class="anno-card-close" onclick="closeAnno('b2')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Shows the exact financial difference between selling now (taxable) and waiting until tax-free. Uses concrete pound figures rather than abstract percentages to drive understanding.</div>
+          <div class="anno-sessions">
+            <span class="session-pill employee">Employee FG</span>
+            <span class="session-pill admin-jan21">Admin 21 Jan</span>
+            <span class="session-pill admin-jan29">Admin 29 Jan</span>
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill bt-interview">BT Interview</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in ALL 6 sessions (~118 references) — CRITICAL</div>
+          <div class="anno-quote"><p>"Tax impact modelling: If you sell now you'll have £2,000. If you wait until year 5, you'll have £2,500 because no tax."</p><cite>— Admin FG 21 Jan, Requested Feature</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-b3" style="bottom:60px;right:100px">
+        <div class="anno-card-head"><div class="anno-card-num">3</div><div class="anno-card-title">Smart Sell Order Suggestion</div><button class="anno-card-close" onclick="closeAnno('b3')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">The system proactively suggests selling available (tax-free) shares first before touching conditional shares. This prevents unnecessary tax liability from uninformed selling order.</div>
+          <div class="anno-sessions">
+            <span class="session-pill admin-feb16">Admin 16 Feb</span>
+            <span class="session-pill sip-workshop">SIP Workshop</span>
+          </div>
+          <div class="anno-mention-count"><span class="dot"></span> "Calculator at point of decision — show gain, tax implications before they click" (Magic Wand wish)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 3: HOLDINGS DETAIL
+     ============================================================ -->
+<section class="screen-section" id="screen-3">
+  <div class="screen-label">Screen 3 of 7</div>
+  <div class="screen-title">SIP Holdings Detail</div>
+  <div class="screen-desc">Detailed view of Partnership, Free, and Matching shares with clear status indicators, vesting timelines, and unified plan references.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-url">https://portal.one.group/sip/holdings</div></div>
+    <div class="mockup-body">
+      <div class="nx-topbar"><span class="nx-topbar-logo">One</span><div class="nx-topbar-tabs"><div class="nx-topbar-tab active">My SIP</div><div class="nx-topbar-tab">Tools</div></div><div class="nx-topbar-right"><div class="nx-topbar-avatar">IP</div></div></div>
+      <div class="nx-page-content">
+        <div style="font-size:22px;font-weight:700;margin-bottom:4px">SIP Holdings</div>
+        <div style="font-size:14px;color:var(--colour-text-body-disabled);margin-bottom:16px">Plan Reference: <span style="font-weight:700;color:var(--colour-text-body)">ONE-SIP-47291</span></div>
+
+        <div style="position:relative">
+          <div class="nx-tab-row mb-24">
+            <div class="nx-tab-item active">Partnership Shares</div>
+            <div class="nx-tab-item">Free Shares</div>
+            <div class="nx-tab-item">Matching Shares</div>
+          </div>
+          <div class="anno-marker" style="top:4px;right:-14px" onclick="toggleAnno('c1')" id="marker-c1">1</div>
+        </div>
+
+        <div style="position:relative">
+          <table class="nx-table mb-24">
+            <thead><tr><th>Purchase Date</th><th>Shares</th><th>Purchase Price</th><th>Current Value</th><th>Status</th><th>Tax-Free Date</th></tr></thead>
+            <tbody>
+              <tr><td>Mar 2021</td><td>68</td><td>£9.20</td><td>£838.44</td><td><span class="nx-status-pill available">Available</span></td><td>Mar 2026 ✓</td></tr>
+              <tr><td>Jun 2021</td><td>72</td><td>£9.55</td><td>£887.76</td><td><span class="nx-status-pill available">Available</span></td><td>Jun 2026 ✓</td></tr>
+              <tr><td>Sep 2022</td><td>85</td><td>£10.10</td><td>£1,048.05</td><td><span class="nx-status-pill conditional">Conditional</span></td><td>Sep 2027</td></tr>
+              <tr><td>Dec 2023</td><td>94</td><td>£11.20</td><td>£1,159.02</td><td><span class="nx-status-pill conditional">Conditional</span></td><td>Dec 2028</td></tr>
+              <tr><td>Jun 2024</td><td>90</td><td>£11.80</td><td>£1,109.70</td><td><span class="nx-status-pill locked">Locked-in</span></td><td>Jun 2029</td></tr>
+            </tbody>
+          </table>
+          <div class="anno-marker" style="top:8px;right:-14px" onclick="toggleAnno('c2')" id="marker-c2">2</div>
+        </div>
+
+        <!-- Vesting timeline -->
+        <div class="nx-card" style="position:relative">
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px">Holding Period Timeline</div>
+          <div style="display:flex;align-items:center;gap:0;margin-bottom:8px">
+            <div style="flex:3;height:8px;background:var(--colour-alerts-success);border-radius:4px 0 0 4px"></div>
+            <div style="flex:4;height:8px;background:var(--colour-alerts-warning)"></div>
+            <div style="flex:2;height:8px;background:var(--colour-alerts-error);border-radius:0 4px 4px 0"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--colour-text-body-disabled)">
+            <span>Year 0</span><span>Year 3 (end lock-in)</span><span>Year 5 (tax-free)</span><span>Now</span>
+          </div>
+          <div class="anno-marker" style="top:8px;right:-14px" onclick="toggleAnno('c3')" id="marker-c3">3</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-c1" style="top:100px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">1</div><div class="anno-card-title">Clear Share Type Tabs</div><button class="anno-card-close" onclick="closeAnno('c1')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Partnership, Free, and Matching shares are separated into clear tabs using plain language. Replaces confusing jargon like "vest", "exercise", and "nominee" with terms employees understand.</div>
+          <div class="anno-sessions"><span class="session-pill employee">Employee FG</span><span class="session-pill admin-jan21">Admin 21 Jan</span><span class="session-pill admin-jan29">Admin 29 Jan</span><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill bt-interview">BT Interview</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 5 sessions (~54 references)</div>
+          <div class="anno-quote"><p>"Terminology: 'Exercise your option' means nothing to average employees."</p><cite>— Admin FG 21 Jan</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-c2" style="top:260px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">2</div><div class="anno-card-title">Status + Tax-Free Date per Row</div><button class="anno-card-close" onclick="closeAnno('c2')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Every row shows its status (Available/Conditional/Locked-in) with a colour-coded pill AND the specific date it becomes tax-free. This directly answers "when can I sell without tax?"</div>
+          <div class="anno-sessions"><span class="session-pill admin-jan21">Admin 21 Jan</span><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill bt-interview">BT Interview</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> ~35 references across sessions</div>
+          <div class="anno-quote"><p>"When you mention shares, it's almost like white coat syndrome when you go to your GP — people's blood pressure goes up."</p><cite>— Sarah, Centrica</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-c3" style="bottom:40px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">3</div><div class="anno-card-title">Visual Holding Period Timeline</div><button class="anno-card-close" onclick="closeAnno('c3')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">A colour-coded progress bar shows how far shares are through the 5-year holding period. Employees can see at a glance how close conditional shares are to becoming tax-free.</div>
+          <div class="anno-sessions"><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill sip-workshop">SIP Workshop</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Holding period confusion is a core SIP misunderstanding</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 4: SELL FLOW
+     ============================================================ -->
+<section class="screen-section" id="screen-4">
+  <div class="screen-label">Screen 4 of 7</div>
+  <div class="screen-title">Sell Flow with Tax Warning</div>
+  <div class="screen-desc">A guided sell journey with step-by-step progress tracking and a mandatory tax impact warning before any conditional shares are sold early.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-url">https://portal.one.group/sip/sell</div></div>
+    <div class="mockup-body">
+      <div class="nx-topbar"><span class="nx-topbar-logo">One</span><div class="nx-topbar-tabs"><div class="nx-topbar-tab active">My SIP</div></div><div class="nx-topbar-right"><div class="nx-topbar-avatar">IP</div></div></div>
+      <div class="nx-page-content">
+        <!-- Stepper -->
+        <div style="position:relative;margin-bottom:32px">
+          <div class="nx-stepper-mock">
+            <div class="nx-step"><div class="nx-step-circle done">✓</div><div class="nx-step-label">Select Shares</div></div>
+            <div class="nx-step-line done"></div>
+            <div class="nx-step"><div class="nx-step-circle active">2</div><div class="nx-step-label">Review & Tax Impact</div></div>
+            <div class="nx-step-line"></div>
+            <div class="nx-step"><div class="nx-step-circle pending">3</div><div class="nx-step-label">Confirm</div></div>
+            <div class="nx-step-line"></div>
+            <div class="nx-step"><div class="nx-step-circle pending">4</div><div class="nx-step-label">Complete</div></div>
+          </div>
+          <div class="anno-marker" style="top:-10px;right:-14px" onclick="toggleAnno('d3')" id="marker-d3">3</div>
+        </div>
+
+        <div style="font-size:22px;font-weight:700;margin-bottom:24px">Review Your Sale</div>
+
+        <!-- Tax Warning -->
+        <div style="position:relative;margin-bottom:24px">
+          <div class="nx-alert-mock warning" style="border:2px solid var(--colour-stroke-warning)">
+            <div class="bar"></div>
+            <div class="content">
+              <strong>⚠ Tax impact on early sale</strong><br>
+              You are selling <strong>100 conditional shares</strong> before the 5-year holding period. This means:<br>
+              • Income tax and National Insurance will be deducted (est. £370)<br>
+              • You will receive approximately <strong>£863</strong> instead of <strong>£1,233</strong><br>
+              <span style="font-weight:700;margin-top:4px;display:block">If you wait 14 more months, these shares become tax-free.</span>
+            </div>
+          </div>
+          <div class="anno-marker" style="top:-10px;left:20px" onclick="toggleAnno('d1')" id="marker-d1">1</div>
+        </div>
+
+        <!-- Sale summary -->
+        <div class="nx-card mb-24" style="position:relative">
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px">Sale Summary</div>
+          <div class="flex-between mb-8"><span>100 shares × £12.33</span><span style="font-weight:700">£1,233.00</span></div>
+          <div class="flex-between mb-8"><span>Income tax (est.)</span><span style="color:var(--colour-icons-error)">−£246.60</span></div>
+          <div class="flex-between mb-8"><span>NI contribution (est.)</span><span style="color:var(--colour-icons-error)">−£123.30</span></div>
+          <div style="border-top:2px solid var(--colour-stroke-default);padding-top:12px;margin-top:12px" class="flex-between">
+            <span style="font-size:18px;font-weight:700">Estimated proceeds</span>
+            <span style="font-size:22px;font-weight:700">£863.10</span>
+          </div>
+          <div class="anno-marker" style="top:10px;right:-14px" onclick="toggleAnno('d2')" id="marker-d2">2</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--colour-text-primary);font-weight:400;font-size:16px;border-bottom:1px solid var(--colour-global-primary);cursor:default">← Back</span>
+          <div class="nx-btn nx-btn--primary">Confirm Sale →</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-d1" style="top:160px;left:40px">
+        <div class="anno-card-head"><div class="anno-card-num">1</div><div class="anno-card-title">Mandatory Pre-Sell Tax Warning</div><button class="anno-card-close" onclick="closeAnno('d1')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">A prominent warning appears BEFORE confirmation when selling conditional shares. Shows exact tax cost in pounds and months remaining to tax-free status. Cannot be dismissed without acknowledgement.</div>
+          <div class="anno-sessions"><span class="session-pill employee">Employee FG</span><span class="session-pill admin-jan21">Admin 21 Jan</span><span class="session-pill admin-jan29">Admin 29 Jan</span><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill bt-interview">BT Interview</span><span class="session-pill sip-workshop">SIP Workshop</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> ALL 6 sessions — #1 research theme (~118 references)</div>
+          <div class="anno-quote"><p>"Better warnings: If you sell before 5 years, you lose tax relief. Are you sure?"</p><cite>— Admin FG 21 Jan, Requested Feature</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-d2" style="bottom:100px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">2</div><div class="anno-card-title">Transparent Fee Breakdown</div><button class="anno-card-close" onclick="closeAnno('d2')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Every deduction is itemised. Employees see gross value, tax, NI, and net proceeds before confirming. Eliminates the "surprise" of receiving less than expected.</div>
+          <div class="anno-sessions"><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill sip-workshop">SIP Workshop</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> "Calculator at point of decision — show gain, tax implications before they click"</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-d3" style="top:60px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">3</div><div class="anno-card-title">Step-by-Step Progress Tracking</div><button class="anno-card-close" onclick="closeAnno('d3')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">A visible stepper shows exactly where the employee is in the sell journey. Like tracking a parcel — reducing anxiety about what happens next.</div>
+          <div class="anno-sessions"><span class="session-pill admin-jan21">Admin 21 Jan</span><span class="session-pill admin-jan29">Admin 29 Jan</span><span class="session-pill admin-feb16">Admin 16 Feb</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 3 admin sessions (~61 references)</div>
+          <div class="anno-quote"><p>"Transaction timeline/tracker: Like tracking a parcel — you've put your instruction in, next step is sold on this date, money on that date."</p><cite>— Admin FG 21 Jan</cite></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 5: DIVIDEND HISTORY
+     ============================================================ -->
+<section class="screen-section" id="screen-5">
+  <div class="screen-label">Screen 5 of 7</div>
+  <div class="screen-title">Dividend History & Management</div>
+  <div class="screen-desc">Dividend tracking with mandate health checks, tax voucher downloads, and DRIP education — addressing the widespread issue of unclaimed dividends.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-url">https://portal.one.group/sip/dividends</div></div>
+    <div class="mockup-body">
+      <div class="nx-topbar"><span class="nx-topbar-logo">One</span><div class="nx-topbar-tabs"><div class="nx-topbar-tab active">My SIP</div></div><div class="nx-topbar-right"><div class="nx-topbar-avatar">IP</div></div></div>
+      <div class="nx-page-content">
+        <div style="font-size:22px;font-weight:700;margin-bottom:24px">Dividend History</div>
+
+        <!-- Mandate health check -->
+        <div style="position:relative;margin-bottom:24px">
+          <div class="nx-alert-mock error" style="border:2px solid var(--colour-stroke-error)">
+            <div class="bar"></div>
+            <div class="content"><strong>⚠ Action needed: No bank account linked for dividend payments</strong><br>Your dividends are being held as cash. Set up a bank mandate to receive future dividends automatically. <span style="font-weight:700;text-decoration:underline;cursor:default">Link bank account →</span></div>
+          </div>
+          <div class="anno-marker" style="top:-10px;left:20px" onclick="toggleAnno('e1')" id="marker-e1">1</div>
+        </div>
+
+        <!-- Dividend table -->
+        <div style="position:relative">
+          <table class="nx-table mb-24">
+            <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Tax Voucher</th></tr></thead>
+            <tbody>
+              <tr><td>Dec 2025</td><td>Interim</td><td>£42.80</td><td><span style="color:var(--colour-icons-warning)">● Held (no mandate)</span></td><td><span style="color:var(--colour-text-primary);text-decoration:underline;cursor:default">Download</span></td></tr>
+              <tr><td>Jun 2025</td><td>Final</td><td>£68.50</td><td><span style="color:var(--colour-icons-warning)">● Held</span></td><td><span style="color:var(--colour-text-primary);text-decoration:underline;cursor:default">Download</span></td></tr>
+              <tr><td>Dec 2024</td><td>Interim</td><td>£38.20</td><td><span style="color:var(--colour-icons-success)">● Paid</span></td><td><span style="color:var(--colour-text-primary);text-decoration:underline;cursor:default">Download</span></td></tr>
+            </tbody>
+          </table>
+          <div class="anno-marker" style="top:8px;right:-14px" onclick="toggleAnno('e2')" id="marker-e2">2</div>
+        </div>
+
+        <!-- DRIP section -->
+        <div class="nx-card" style="position:relative;background:var(--colour-alerts-success)">
+          <div style="font-size:16px;font-weight:700;color:var(--colour-text-success);margin-bottom:8px">🔄 Reinvest Your Dividends (DRIP)</div>
+          <div style="font-size:14px;color:var(--colour-text-body);line-height:1.6">Instead of receiving cash, reinvest your dividends to buy more SIP shares automatically. This can compound your returns over time.</div>
+          <div class="nx-btn nx-btn--primary nx-btn--sm" style="margin-top:12px;align-self:flex-start">Set up DRIP →</div>
+          <div class="anno-marker" style="top:8px;right:-14px" onclick="toggleAnno('e3')" id="marker-e3">3</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-e1" style="top:120px;left:40px">
+        <div class="anno-card-head"><div class="anno-card-num">1</div><div class="anno-card-title">Dividend Mandate Health Check</div><button class="anno-card-close" onclick="closeAnno('e1')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">A proactive alert surfaces when bank details are missing. BT discovered employees with £25,000+ in unclaimed dividends because no bank mandate was set up. This banner prevents that.</div>
+          <div class="anno-sessions"><span class="session-pill bt-interview">BT Interview</span><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill sip-workshop">SIP Workshop</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> BT reunited employees with £25,000+ in unclaimed dividends</div>
+          <div class="anno-quote"><p>"Last year I reunited one person with £25,000, somebody else with £14,000, and they had absolutely no idea."</p><cite>— Anna, BT Administrator</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-e2" style="top:240px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">2</div><div class="anno-card-title">Tax Voucher Download</div><button class="anno-card-close" onclick="closeAnno('e2')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Each dividend row includes a direct download link for the tax voucher. January creates an exponential spike in tax-related queries — this self-service feature reduces helpline burden.</div>
+          <div class="anno-sessions"><span class="session-pill bt-interview">BT Interview</span><span class="session-pill admin-feb16">Admin 16 Feb</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 3 sessions (~21 references)</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-e3" style="bottom:40px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">3</div><div class="anno-card-title">DRIP Education</div><button class="anno-card-close" onclick="closeAnno('e3')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Dividend reinvestment is poorly understood. This contextual education card explains DRIP in plain language at the moment it's most relevant — when viewing dividend history.</div>
+          <div class="anno-sessions"><span class="session-pill sip-workshop">SIP Workshop</span><span class="session-pill bt-interview">BT Interview</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> SIP-to-SIPP transfer feature exists but is underutilised and poorly promoted</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 6: TRANSACTION TRACKER
+     ============================================================ -->
+<section class="screen-section" id="screen-6">
+  <div class="screen-label">Screen 6 of 7</div>
+  <div class="screen-title">Transaction History & Progress Tracker</div>
+  <div class="screen-desc">Real-time visibility into transaction status, modelled on parcel delivery tracking. Eliminates the "black hole" between submitting a sell instruction and receiving funds.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-url">https://portal.one.group/sip/transactions</div></div>
+    <div class="mockup-body">
+      <div class="nx-topbar"><span class="nx-topbar-logo">One</span><div class="nx-topbar-tabs"><div class="nx-topbar-tab active">My SIP</div></div><div class="nx-topbar-right"><div class="nx-topbar-avatar">IP</div></div></div>
+      <div class="nx-page-content">
+        <div style="font-size:22px;font-weight:700;margin-bottom:24px">Transaction History</div>
+
+        <!-- Active transaction tracker -->
+        <div class="nx-card mb-24" style="border-left:4px solid var(--colour-global-primary);position:relative">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--colour-global-primary)">IN PROGRESS</div>
+              <div style="font-size:16px;font-weight:700">Sale of 100 Partnership Shares</div>
+              <div style="font-size:13px;color:var(--colour-text-body-disabled)">Submitted 22 Feb 2026</div>
+            </div>
+            <div style="font-size:20px;font-weight:700">£863.10</div>
+          </div>
+          <!-- Progress steps vertical -->
+          <div style="display:flex;flex-direction:column;gap:0;margin-left:12px">
+            <div style="display:flex;gap:12px;align-items:flex-start;padding-bottom:16px;border-left:2px solid var(--colour-global-primary);padding-left:20px;position:relative"><div style="position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:var(--colour-icons-success)"></div><div><div style="font-size:14px;font-weight:700">Instruction received</div><div style="font-size:12px;color:var(--colour-text-body-disabled)">22 Feb 2026, 14:32</div></div></div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding-bottom:16px;border-left:2px solid var(--colour-global-primary);padding-left:20px;position:relative"><div style="position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:var(--colour-icons-success)"></div><div><div style="font-size:14px;font-weight:700">Shares sold</div><div style="font-size:12px;color:var(--colour-text-body-disabled)">23 Feb 2026, 09:15 — Price: £12.33</div></div></div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding-bottom:16px;border-left:2px solid var(--colour-global-primary);padding-left:20px;position:relative"><div style="position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:var(--colour-global-primary)"></div><div><div style="font-size:14px;font-weight:700;color:var(--colour-global-primary)">Processing payment</div><div style="font-size:12px;color:var(--colour-text-body-disabled)">Expected: 25 Feb 2026</div></div></div>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding-left:20px;border-left:2px solid var(--colour-stroke-default);position:relative"><div style="position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:var(--colour-button-inactive)"></div><div><div style="font-size:14px;color:var(--colour-text-body-disabled)">Funds in your account</div><div style="font-size:12px;color:var(--colour-text-body-disabled)">Expected: 26 Feb 2026</div></div></div>
+          </div>
+          <div class="anno-marker" style="top:10px;right:-14px" onclick="toggleAnno('f1')" id="marker-f1">1</div>
+        </div>
+
+        <!-- Past transactions -->
+        <div style="position:relative">
+          <table class="nx-table">
+            <thead><tr><th>Date</th><th>Type</th><th>Shares</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>15 Jan 2026</td><td>Sale — Partnership</td><td>50</td><td>£608.50</td><td><span style="color:var(--colour-icons-success)">● Complete</span></td></tr>
+              <tr><td>01 Dec 2025</td><td>Purchase — Monthly</td><td>16</td><td>£200.00</td><td><span style="color:var(--colour-icons-success)">● Complete</span></td></tr>
+              <tr><td>01 Nov 2025</td><td>Purchase — Monthly</td><td>17</td><td>£200.00</td><td><span style="color:var(--colour-icons-success)">● Complete</span></td></tr>
+            </tbody>
+          </table>
+          <div class="anno-marker" style="top:8px;right:-14px" onclick="toggleAnno('f2')" id="marker-f2">2</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-f1" style="top:80px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">1</div><div class="anno-card-title">Parcel-Tracking Style Progress</div><button class="anno-card-close" onclick="closeAnno('f1')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">A vertical timeline shows every step from instruction to funds arriving, with timestamps and expected dates. Modelled on the passport renewal tracking that was praised in research.</div>
+          <div class="anno-sessions"><span class="session-pill admin-jan21">Admin 21 Jan</span><span class="session-pill admin-jan29">Admin 29 Jan</span><span class="session-pill admin-feb16">Admin 16 Feb</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in all 3 admin sessions (~61 references)</div>
+          <div class="anno-quote"><p>"Sarah used the passport renewal process as an example of excellent communication — receiving updates at every stage without needing to query anything."</p><cite>— Admin FG 16 Feb</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-f2" style="bottom:40px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">2</div><div class="anno-card-title">Complete Transaction History</div><button class="anno-card-close" onclick="closeAnno('f2')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">All purchases and sales in one unified history. Contract notes and documents link directly from each row — no navigating to a separate document repository.</div>
+          <div class="anno-sessions"><span class="session-pill admin-jan21">Admin 21 Jan</span><span class="session-pill admin-feb16">Admin 16 Feb</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> "Contract notes in document repository don't link nicely to specific plans"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 7: CONTRIBUTION MANAGEMENT
+     ============================================================ -->
+<section class="screen-section" id="screen-7">
+  <div class="screen-label">Screen 7 of 7</div>
+  <div class="screen-title">Contribution Management</div>
+  <div class="screen-desc">Self-service contribution changes with clear processing timelines, employer match visibility, and ISA transfer options.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-browser-bar"><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-url">https://portal.one.group/sip/contributions</div></div>
+    <div class="mockup-body">
+      <div class="nx-topbar"><span class="nx-topbar-logo">One</span><div class="nx-topbar-tabs"><div class="nx-topbar-tab active">My SIP</div></div><div class="nx-topbar-right"><div class="nx-topbar-avatar">IP</div></div></div>
+      <div class="nx-page-content">
+        <div style="font-size:22px;font-weight:700;margin-bottom:24px">Manage Contributions</div>
+
+        <div class="grid-2 gap-24 mb-24">
+          <!-- Current contribution -->
+          <div class="nx-card flex-col gap-16" style="position:relative">
+            <div style="font-size:16px;font-weight:700">Current Contribution</div>
+            <div style="font-size:28px;font-weight:700">£200<span style="font-size:14px;font-weight:400;color:var(--colour-text-body-disabled)">/month</span></div>
+            <div class="flex-between"><span style="font-size:14px">Employer match (2:1)</span><span style="font-weight:700;color:var(--colour-icons-success)">+£100/month</span></div>
+            <div class="flex-between"><span style="font-size:14px">Annual allowance used</span><span style="font-weight:700">£1,200 of £1,800</span></div>
+            <div class="progress-track"><div class="progress-fill" style="width:67%"></div></div>
+          </div>
+
+          <!-- Change form -->
+          <div class="nx-card flex-col gap-16" style="position:relative">
+            <div style="font-size:16px;font-weight:700">Change Monthly Amount</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:4px">New monthly amount</div>
+              <div class="nx-input-mock">£ Enter amount (max £150/month pre-tax)</div>
+            </div>
+            <div class="nx-alert-mock info">
+              <div class="bar"></div>
+              <div class="content">Changes submitted before <strong>15th March</strong> will take effect from <strong>April payroll</strong>. Changes after this date will apply from May.</div>
+            </div>
+            <div class="nx-btn nx-btn--primary" style="align-self:flex-start">Submit Change →</div>
+            <div class="anno-marker" style="top:10px;right:-14px" onclick="toggleAnno('g1')" id="marker-g1">1</div>
+          </div>
+        </div>
+
+        <!-- Processing info -->
+        <div style="position:relative;margin-bottom:24px">
+          <div class="nx-card flex-col gap-12">
+            <div style="font-size:16px;font-weight:700">Processing Calendar</div>
+            <div class="grid-3 gap-16">
+              <div style="background:var(--colour-panels-light);border-radius:var(--corners-md);padding:12px;font-size:13px;text-align:center">
+                <div style="font-weight:700;margin-bottom:4px">Cutoff Date</div>
+                <div>15th of each month</div>
+              </div>
+              <div style="background:var(--colour-panels-light);border-radius:var(--corners-md);padding:12px;font-size:13px;text-align:center">
+                <div style="font-weight:700;margin-bottom:4px">Next Share Purchase</div>
+                <div>1st April 2026</div>
+              </div>
+              <div style="background:var(--colour-panels-light);border-radius:var(--corners-md);padding:12px;font-size:13px;text-align:center">
+                <div style="font-weight:700;margin-bottom:4px">Shares Visible On</div>
+                <div>~5th April 2026</div>
+              </div>
+            </div>
+          </div>
+          <div class="anno-marker" style="top:10px;right:-14px" onclick="toggleAnno('g2')" id="marker-g2">2</div>
+        </div>
+
+        <!-- ISA transfer -->
+        <div class="nx-card" style="border-left:4px solid var(--colour-global-primary);position:relative">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:4px">Transfer to ISA</div>
+              <div style="font-size:14px;color:var(--colour-text-body);line-height:1.5">Move your available SIP shares into an ISA for continued tax-free growth. Your available shares (342) can be transferred immediately.</div>
+            </div>
+            <div class="nx-btn nx-btn--secondary">Learn more →</div>
+          </div>
+          <div class="anno-marker" style="top:8px;right:-14px" onclick="toggleAnno('g3')" id="marker-g3">3</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-g1" style="top:80px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">1</div><div class="anno-card-title">Self-Serve Contribution Changes</div><button class="anno-card-close" onclick="closeAnno('g1')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Employees can change contributions directly in the portal with a clear cutoff date warning. Eliminates the security risk of employees emailing bank details to request changes.</div>
+          <div class="anno-sessions"><span class="session-pill bt-interview">BT Interview</span><span class="session-pill admin-feb16">Admin 16 Feb</span><span class="session-pill admin-jan29">Admin 29 Jan</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Mentioned in 3 sessions (~48 references)</div>
+          <div class="anno-quote"><p>"One employee changed his bank details twice in a month because Martin Lewis told him it was a good thing to do — impossible to keep up with on monthly file updates."</p><cite>— Anna, BT Administrator</cite></div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-g2" style="bottom:140px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">2</div><div class="anno-card-title">Transparent Processing Timeline</div><button class="anno-card-close" onclick="closeAnno('g2')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">Monthly processing dates are shown explicitly. Employees expect banking-app speed but SIP uses monthly batch processing. Setting clear expectations reduces helpline queries.</div>
+          <div class="anno-sessions"><span class="session-pill bt-interview">BT Interview</span><span class="session-pill admin-feb16">Admin 16 Feb</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> Monthly file update process causes confusion and frustration</div>
+        </div>
+      </div>
+
+      <div class="anno-card" id="anno-g3" style="bottom:40px;right:20px">
+        <div class="anno-card-head"><div class="anno-card-num">3</div><div class="anno-card-title">SIP-to-ISA Transfer Promotion</div><button class="anno-card-close" onclick="closeAnno('g3')">&times;</button></div>
+        <div class="anno-card-body">
+          <div class="anno-card-rationale">The SIP-to-ISA transfer feature exists but is underutilised. A contextual prompt at the contribution management level educates employees about continued tax-free growth potential.</div>
+          <div class="anno-sessions"><span class="session-pill sip-workshop">SIP Workshop</span><span class="session-pill bt-interview">BT Interview</span></div>
+          <div class="anno-mention-count"><span class="dot"></span> "Seamless ISA integration" was on the Magic Wand wish list</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer style="background:var(--colour-global-black);color:white;padding:32px 80px;text-align:center">
+  <div style="font-size:14px;font-weight:700;margin-bottom:8px">SIP Conceptual Design — Project Nexus</div>
+  <div style="font-size:12px;opacity:0.6">One Group | Research-backed design concepts | 7 screens, 24 annotations | 6 research sessions, 20+ participants</div>
+  <div style="font-size:12px;opacity:0.4;margin-top:8px">Design tokens: NEXUS Design System (Figma MCP extraction) | Primary: #0c41c9 | Font: Inter | Radius: 4px buttons, 16px cards</div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT — Annotation Toggle System
+     ============================================================ -->
+<script>
+function toggleAnno(id) {
+  const card = document.getElementById('anno-' + id);
+  const marker = document.getElementById('marker-' + id);
+  const backdrop = document.getElementById('annoBackdrop');
+  const isOpen = card.classList.contains('open');
+
+  // Close all first
+  closeAllAnnotations();
+
+  // If it wasn't open, open it
+  if (!isOpen) {
+    card.classList.add('open');
+    marker.classList.add('open');
+    backdrop.classList.add('open');
+  }
+}
+
+function closeAnno(id) {
+  const card = document.getElementById('anno-' + id);
+  const marker = document.getElementById('marker-' + id);
+  card.classList.remove('open');
+  marker.classList.remove('open');
+  document.getElementById('annoBackdrop').classList.remove('open');
+}
+
+function closeAllAnnotations() {
+  document.querySelectorAll('.anno-card.open').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('.anno-marker.open').forEach(m => m.classList.remove('open'));
+  document.getElementById('annoBackdrop').classList.remove('open');
+}
+
+function setActiveNav(el) {
+  document.querySelectorAll('.screen-nav a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Update active nav on scroll
+const sections = document.querySelectorAll('.screen-section');
+const navLinks = document.querySelectorAll('.screen-nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const top = section.offsetTop - 140;
+    if (window.scrollY >= top) current = section.id;
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+  });
+});
+
+// Close annotations on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAllAnnotations();
+});
+</script>
+</body>
+</html>
